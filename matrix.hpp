@@ -5,7 +5,7 @@
 const size_t MAX_MATRIX_SIZE = 16;
 
 struct Matrix {
-    int32_t data[1024][1024];
+    int32_t data[MAX_MATRIX_SIZE][MAX_MATRIX_SIZE];
     size_t dims[2];
 
     void print() const {
