@@ -32,44 +32,44 @@ void generateMatrix(Matrix* matrix) {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        std::cout << "Usage: ./main <num_secs>" << "\n";
-        return 1;
-    }
+    // if (argc < 2) {
+    //     std::cout << "Usage: ./main <num_secs>" << "\n";
+    //     return 1;
+    // }
 
-    int num_secs = -1;
-    try {
-        num_secs = std::stoi(argv[1]);
-    } catch (std::exception e) {
-        std::cout << "error: " << argv[1] << " is not a number!\n";
-        return 1;
-    }
+    // int num_secs = -1;
+    // try {
+    //     num_secs = std::stoi(argv[1]);
+    // } catch (std::exception e) {
+    //     std::cout << "error: " << argv[1] << " is not a number!\n";
+    //     return 1;
+    // }
 
-    std::cout << "Setting up shared memory... \n";
-    // currently creating buffer of one matrix + two semaphores
-    const int memSize = sizeof(Matrix) * NUM_MATRICES;
-    std::vector<std::pair<int, void*>> worker_fds(NUM_WORKERS);
-    for (int i = 0; i < NUM_WORKERS; ++i) {
-        std::cout << "worker " << i << ": \n";
-        std::string name = "/worker";
-        name += std::to_string(i);
-        int fd = shm_open(name.c_str(), O_RDWR | O_CREAT , 0666);
-        if (fd == -1) {
-            std::cout << "shm_open for " << name << " failed with " << strerror(errno) << std::endl;
-            return 1;
-        }
+    // std::cout << "Setting up shared memory... \n";
+    // // currently creating buffer of one matrix + two semaphores
+    // const int memSize = sizeof(Matrix) * NUM_MATRICES;
+    // std::vector<std::pair<int, void*>> worker_fds(NUM_WORKERS);
+    // for (int i = 0; i < NUM_WORKERS; ++i) {
+    //     std::cout << "worker " << i << ": \n";
+    //     std::string name = "/worker";
+    //     name += std::to_string(i);
+    //     int fd = shm_open(name.c_str(), O_RDWR | O_CREAT , 0666);
+    //     if (fd == -1) {
+    //         std::cout << "shm_open for " << name << " failed with " << strerror(errno) << std::endl;
+    //         return 1;
+    //     }
 
-        if (ftruncate(fd, memSize) == -1) {
-            std::cout << "ftruncate for " << name << " failed with " << strerror(errno) << std::endl;
-            return 1;
-        }
+    //     if (ftruncate(fd, memSize) == -1) {
+    //         std::cout << "ftruncate for " << name << " failed with " << strerror(errno) << std::endl;
+    //         return 1;
+    //     }
 
-        void* ptr = mmap(0, memSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-        if (ptr == MAP_FAILED) {
-            std::cout << "mmap for " << name << " failed with " << strerror(errno) << std::endl;
-            return 1;
-        }
-        worker_fds[i] = {fd, ptr};
+    //     void* ptr = mmap(0, memSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    //     if (ptr == MAP_FAILED) {
+    //         std::cout << "mmap for " << name << " failed with " << strerror(errno) << std::endl;
+    //         return 1;
+    //     }
+    //     worker_fds[i] = {fd, ptr};
 
         // sem_t* mut1 = (sem_t*)((char*)ptr + sizeof(Matrix));
         // sem_t* mut2 = (sem_t*)((char*)ptr + sizeof(Matrix) + sizeof(sem_t));
@@ -83,10 +83,10 @@ int main(int argc, char** argv) {
         // }
 
         // generateMatrix((Matrix*)ptr);
-    }
+    // }
 
-    std::cout << "After launching " << NUM_WORKERS << " workers, press enter to continue.";
-    getchar(); 
+    // std::cout << "After launching " << NUM_WORKERS << " workers, press enter to continue.";
+    // getchar(); 
 
     // // generate matrices, send, then wait
     // for (int i = 0; i < NUM_WORKERS; ++i) {
@@ -145,34 +145,23 @@ int main(int argc, char** argv) {
     //     }
     // }
     
-    // ShmQueue<int> buf("/name", 50);
-    // buf.init();
-    // int ctr = 0;
-    // // std::cout << "p to push, q to quit: \n";
-    // // char c;
-    // // while (std::cin >> c) {
-    // //     if (c == 'q') {
-    // //         break;
-    // //     }
+    ShmQueue<int> buf("/name", 5);
+    buf.init();
+    int ctr = 0;
+    std::cout << "p to push, q to quit: \n";
+    char c;
+    while (true) {
+        c = getchar();
+        if (c == 'q') {
+            break;
+        }
 
-    // //     if (!buf.push(ctr++)) {
-    // //         std::cout << "--- full buffer ---\n";
-    // //         continue;
-    // //     }
-    // // }
-
-    // std::cout << "enter to start\n";
-    // getchar();
-
-    
-    auto start = high_resolution_clock::now();
-    while (duration_cast<seconds>(high_resolution_clock::now() - start).count() < 5 ) {
-
-    //     if (!buf.push(ctr++)) {
-    //         ctr--;
-    //         usleep(250);
-    //     }
+        if (!buf.push(ctr++)) {
+            std::cout << "--- full buffer ---\n";
+            continue;
+        }
     }
+
 
     // std::cout << "ctr: " << ctr << std::endl;
 

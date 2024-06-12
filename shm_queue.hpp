@@ -65,13 +65,19 @@ public:
     }
 
     std::optional<T> wait(int64_t msecs) {
-        struct timespec ts;
-        if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
-            throw std::runtime_error(strerror(errno));
-        }
-        ts.tv_nsec += msecs * 1000000;
-        if (sem_timedwait(&ctrs_->sem, &ts) == -1) {
-            return std::nullopt;
+        if (msecs == 0) {
+            if (sem_trywait(&ctrs_->sem) == -1) {
+                return std::nullopt;
+            }
+        } else {
+            struct timespec ts;
+            if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
+                throw std::runtime_error(strerror(errno));
+            }
+            ts.tv_nsec += msecs * 1000000;
+            if (sem_timedwait(&ctrs_->sem, &ts) == -1) {
+                return std::nullopt;
+            }
         }
 
         return pop();

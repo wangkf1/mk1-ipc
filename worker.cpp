@@ -66,39 +66,25 @@ int main(int argc, char** argv) {
     //     return 1;
     // }
 
-    // ShmQueue<int> buf("/name", 50);
-    // int ctr = 0;
-    // int fails = 0;
-    // // std::cout << "p to pop, q to quit: \n";
-    // // char c;
-    // // while (std::cin >> c) {
-    // //     if (c == 'q') {
-    // //         break;
-    // //     }
-    // //     auto opt = buf.pop();
-    // //     if (opt == std::nullopt) {
-    // //         std::cout << "--- empty buffer ---\n";
-    // //         continue;
-    // //     }
-    // //     int val = opt.value();
-    // //     std::cout << "--- got " << val << std::endl;
-    // // }
-
-    // auto start = high_resolution_clock::now();
-    // while (duration_cast<seconds>(high_resolution_clock::now() - start).count() < 6 ) {
-    //     auto opt = buf.wait(1);
-    //     if (opt == std::nullopt) {
-    //         // empty buffer
-    //         // usleep(250);
-    //         continue;
-    //     } else {
-    //         if (opt.value() != ctr) {
-    //             std::cout << opt.value() << "vs " << ctr << std::endl;
-    //             fails++;
-    //         }
-    //         ctr = opt.value() + 1;
-    //     }
-    // }
+    ShmQueue<int> buf("/name", 5);
+    int ctr = 0;
+    int fails = 0;
+    auto start = high_resolution_clock::now();
+    while (duration_cast<seconds>(high_resolution_clock::now() - start).count() < 10 ) {
+        auto opt = buf.wait(1);
+        if (opt == std::nullopt) {
+            // empty buffer
+            // usleep(250);
+            continue;
+        } else {
+            std::cout << "got value " << opt.value() << std::endl;
+            if (opt.value() != ctr) {
+                std::cout << opt.value() << "vs " << ctr << std::endl;
+                fails++;
+            }
+            ctr = opt.value() + 1;
+        }
+    }
 
     // std::cout << "fails: " << fails << std::endl;
     // std::cout << "ctr: " << ctr << std::endl;
