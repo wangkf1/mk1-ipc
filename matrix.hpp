@@ -1,5 +1,8 @@
+#pragma once
 #include <stdint.h>
 
+// common test params
+const int NUM_MATRICES = 100;
 
 // const size_t MAX_MATRIX_SIZE = 1024;
 const size_t MAX_MATRIX_SIZE = 16;
