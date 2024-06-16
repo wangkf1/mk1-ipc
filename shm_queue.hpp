@@ -11,6 +11,7 @@
 #include <atomic>
 #include <stdexcept>
 #include <optional>
+#include <iostream>
 
 #include "shm_wrapper.hpp"
 
@@ -57,6 +58,7 @@ public:
         if (sem_post(&ctrs_->sem) == -1) {
             throw std::runtime_error(strerror(errno));
         }
+        // std::cout << "end of push: tail: " << ctrs_->tail << ", head: " << ctrs_->head << std::endl;
         return true;
     }
 
@@ -83,6 +85,7 @@ public:
         return pop();
     }
     std::optional<T> pop() {
+        // std::cout << "start of pop: tail: " << ctrs_->tail << ", head: " << ctrs_->head << std::endl;
         if (empty()) {
             return std::nullopt;
         }
