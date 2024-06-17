@@ -4,12 +4,21 @@
 
 All communication and matrices are stored in shared memory. A consumer queue and producer queue is set up for each worker, also in shared memory. 
 
-The messages being passed are "tokens", or matrix indices. In the beginning, the main process has all indices stored in its pool (not shared). It is free to write to matrices associated with the tokens. After writing to one, it pushes the token to a worker's consumer queue (randomly picked per the interview requirements). 
+The messages being passed are "tokens", or matrix indices (indices into the shared matrix pool). In the beginning, the main process has all indices stored in its pool (not shared). It is free to write to matrices associated with the tokens. After writing to one, it pushes the token to a worker's consumer queue (randomly picked per the interview requirements). 
 
 The workers pops tokens from the queue and stores it in its own local pool. Then, it can operate on the matrices however it likes. Same as the producer, to send it to the producer, it pushes the token to the producer's queue. 
 
 Finally, the producer can pop the returned tokens and return them to its own pool again for reuse. 
 
+The idea behind this design is so that tokens local to a process refer to matrices that the process is free to write to. And the shared token queues are how the processes pass them between each other. 
+
+### Files
+
+ * `shmem_wrapper.hpp`: class to `shm_open`, `ftruncate`, `mmap`, align memory, and then shut it all down
+ * `shm_queue.hpp`: lock free circular buffer queue. handles the tokens here
+ * `matrix_job_queue.hpp`: class instantiated once per main/worker combination. holds the queues and matrix memory, as well as pop/push ops
+ * `main.cpp`: leader/main/producer process
+ * `worker.cpp`: worker/consumer process
 
 ## Pre-implementation (~3-4 hours)
 
@@ -41,7 +50,7 @@ Other than fixing the crashes:
 
 ### Multithreading
 
-Each process has a single pool of tokens which are available for processing. Instead of having a single main thread process those tokens serially as they come in, we can have threads pop them off and process them. The main process is spending more time sending out matrices than the workers, so it would benefit more. 
+Each process has a single pool of tokens which are available for processing. Instead of having a single main thread process those tokens serially as they come in, we can have threads pop them off and process them. This way, we decouple the matrix processing and the message passing. The main process is spending more time sending out matrices than the workers, so it would benefit more. 
 
 This should be relatively simple to extend as the token pool just needs to be made thread safe and any thread can acquire a token to do work on it. 
 
@@ -55,7 +64,10 @@ struct {
     uint32_t matrices[8][2]; // max 8 matrices in one, 2 dims each
 }
 ```
+
+With this, we can make a simple change to the matrix processing functions in `worker.cpp` and `main.cpp` to operate on the entire memory segment. 
+
 ### Vectorization
 
-Matrix operations are elementwise, so we can vectorize it pretty easily. 
+Matrix operations are elementwise, so we can vectorize it pretty easily in the workers. 
 
