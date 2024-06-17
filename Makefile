@@ -1,4 +1,4 @@
-CLANG := clang++ -std=c++17 -Wall -g
+CLANG := clang++ -std=c++17 -Wall -O2
 
 all: main worker test_queue
 

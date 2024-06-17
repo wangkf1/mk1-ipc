@@ -18,15 +18,20 @@
 class MatrixJobQueue {
 public:
 
-    MatrixJobQueue(const std::string& workername, uint32_t numItems, bool isProducer) 
+    MatrixJobQueue(const std::string& workername, bool isProducer, uint32_t numItems = 64) 
             : producerQueue_(workername + "_producer_queue", numItems)
             , consumerQueue_(workername + "_consumer_queue", numItems)
             , matrixMem_(workername + "_matrixmem", sizeof(Matrix) * numItems)
             , numItems_(numItems)
     {
-        // producer gets all tokens when starting out
-        for (uint32_t i = 0; i < numItems_; ++i) {
-            matrixTokens_.push(i);
+        std::cout << "allocated matrix mem " << sizeof(Matrix) * numItems << " bytes\n";
+        if (isProducer) {
+            // producer gets all tokens when starting out
+            for (uint32_t i = 0; i < numItems_; ++i) {
+                matrixTokens_.push(i);
+            }
+            producerQueue_.init();
+            consumerQueue_.init();
         }
     }
 
@@ -42,14 +47,28 @@ public:
         return std::make_pair(token, matrix);
     }
 
+    // producer calls to push a token for consumer
     bool pushToConsumer(const std::pair<uint32_t, Matrix*>& token) {
        return consumerQueue_.push(token.first);
     }
 
+    // consumer calls to push a token for producer
     bool pushToProducer(const std::pair<uint32_t, Matrix*>& token) {
         return producerQueue_.push(token.first);
     }
 
+    // consumer calls to wait msecs for an available token 
+    bool waitConsumerQueue(int64_t msecs) {
+        auto opt = consumerQueue_.wait(msecs);
+        if (opt == std::nullopt) {
+            return false;
+        }
+
+        matrixTokens_.push(opt.value());
+        return true;
+    }
+
+    // consumer calls to immediately pop token into local pool of tokens
     bool popConsumerQueue() {
         auto opt = consumerQueue_.pop();
         if (opt == std::nullopt) {
@@ -60,6 +79,7 @@ public:
         return true;
     }
 
+    // producer calls to immediately pop token into local pool of tokens
     bool popProducerQueue() {
         auto opt = producerQueue_.pop();
         if (opt == std::nullopt) {
@@ -67,9 +87,10 @@ public:
         }
 
         matrixTokens_.push(opt.value());
+        // std::cout << " -- popped token " << opt.value() << "\n";
         return true;
     }
-private:
+// private:
     ShmQueue<uint32_t> producerQueue_;
     ShmQueue<uint32_t> consumerQueue_;
     SharedMem matrixMem_;

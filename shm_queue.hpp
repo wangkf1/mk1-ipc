@@ -28,6 +28,8 @@ public:
     {
         ctrs_ = (Internals*)mem_.ptr();
         data_ = (T*)((char*)mem_.ptr() + sizeof(Internals));
+        // std::cout << "required alignment " << std::atomic_ref<uint32_t>::required_alignment << "\n";
+        std::cout << "sizeof internals " << sizeof(Internals) << ", sizeof items: " << sizeof(T) << " * num items (" << numItems << ")" << "\n";
     }
     void init() {
         ctrs_->head = 0;
@@ -63,7 +65,10 @@ public:
     }
 
     bool empty() {
-        return !ctrs_->full && (ctrs_->head == ctrs_->tail);
+        return 
+            !
+            ctrs_->full && 
+            (ctrs_->head == ctrs_->tail);
     }
 
     std::optional<T> wait(int64_t msecs) {
@@ -104,8 +109,9 @@ private:
     // data stored in shared mem
     struct Internals { 
         std::atomic_uint32_t head; // position of next item to be consumed
-        std::atomic_uint32_t tail; // position of next open slot to fill
         bool full;
+        char filler[11];           // buffer to reach 16 bytes alignment for atomics
+        std::atomic_uint32_t tail; // position of next open slot to fill
         sem_t sem;                 // semaphore for count and waiting
     };
     Internals* ctrs_;
